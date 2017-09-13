@@ -529,8 +529,7 @@ class AuctionResourceTest(BaseWebTest):
             self.assertEqual(response.json['errors'], [
                 {u'description': [u'tenderPeriod should be greater than 6 days'], u'location': u'body', u'name': u'tenderPeriod'}
             ])
-
-        if not SANDBOX_MODE:
+        else:
             data = self.initial_data['auctionPeriod']
             self.initial_data['auctionPeriod'] = {'startDate': (now + timedelta(days=5)).isoformat()}
             response = self.app.post_json(request_path, {'data': self.initial_data}, status=422)
