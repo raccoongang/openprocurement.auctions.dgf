@@ -296,7 +296,7 @@ class Auction(BaseAuction):
             self.enquiryPeriod.endDate = calculate_business_date(self.auctionPeriod.startDate, -pause_between_enquiry_and_tender_periods, self)
             # self.enquiryPeriod.endDate = calculate_business_date(self.enquiryPeriod.startDate, period_from_start_to_enq_end, self)
             # self.enquiryPeriod.endDate = calculate_business_date(now, period_from_start_to_enq_end, self)
-
+        # TODO cleanup 
         self.auctionPeriod.startDate = None
         self.auctionPeriod.endDate = None
         self.date = now
