@@ -44,7 +44,7 @@ class AuctionTest(BaseWebTest):
             'procurementMethodRationale', 'procurementMethodRationale_en', 'procurementMethodRationale_ru',
             'procurementMethodType', 'procuringEntity', 'minNumberOfQualifiedBids',
             'submissionMethodDetails', 'submissionMethodDetails_en', 'submissionMethodDetails_ru',
-            'title', 'title_en', 'title_ru', 'value', 'auctionPeriod',
+            'title', 'title_en', 'title_ru', 'value', 'auctionPeriod', 'enquiryPeriod'
         ])
         if SANDBOX_MODE:
             fields.add('procurementMethodDetails')
@@ -520,7 +520,9 @@ class AuctionResourceTest(BaseWebTest):
         # Lot exposition time period validation
         if SANDBOX_MODE:
             data = self.initial_data['auctionPeriod']
-            self.initial_data['auctionPeriod'] = {'startDate': (now + timedelta(minutes=5)).isoformat()}
+            self.initial_data['auctionPeriod'] = {'startDate': (now + timedelta(minutes=4)).isoformat()}
+            self.initial_data['enquiryPeriod'] = {'endDate': (now + timedelta(minutes=6)).isoformat()}
+
             response = self.app.post_json(request_path, {'data': self.initial_data}, status=422)
             self.initial_data['auctionPeriod'] = data
             self.assertEqual(response.status, '422 Unprocessable Entity')
@@ -531,7 +533,9 @@ class AuctionResourceTest(BaseWebTest):
             ])
         else:
             data = self.initial_data['auctionPeriod']
-            self.initial_data['auctionPeriod'] = {'startDate': (now + timedelta(days=5)).isoformat()}
+            self.initial_data['auctionPeriod'] = {'startDate': (now + timedelta(days=6)).isoformat()}
+            self.initial_data['enquiryPeriod'] = {'endDate': (now + timedelta(days=4)).isoformat()}
+
             response = self.app.post_json(request_path, {'data': self.initial_data}, status=422)
             self.initial_data['auctionPeriod'] = data
             self.assertEqual(response.status, '422 Unprocessable Entity')
@@ -640,6 +644,30 @@ class AuctionResourceTest(BaseWebTest):
         else:
             self.assertEqual(parse_date(auction['tenderPeriod']['endDate']).date(), parse_date(data['auctionPeriod']['startDate'], TZ).date() - timedelta(days=1))
             self.assertEqual(parse_date(auction['tenderPeriod']['endDate']).time(), time(20, 0))
+
+    def test_create_auction_enquiryPeriod(self):
+        data = self.initial_data.copy()
+        #tenderPeriod = data.pop('tenderPeriod')
+        #data['auctionPeriod'] = {'startDate': tenderPeriod['endDate']}
+        response = self.app.post_json('/auctions', {'data': data})
+        self.assertEqual(response.status, '201 Created')
+        self.assertEqual(response.content_type, 'application/json')
+        auction = response.json['data']
+        self.assertIn('tenderPeriod', auction)
+        self.assertIn('auctionPeriod', auction)
+        self.assertNotIn('startDate', auction['auctionPeriod'])
+        self.assertEqual(parse_date(data['auctionPeriod']['startDate']).date(), parse_date(auction['auctionPeriod']['shouldStartAfter'], TZ).date())
+        if SANDBOX_MODE:
+            auction_startDate = parse_date(data['auctionPeriod']['startDate'], None)
+            if not auction_startDate.tzinfo:
+                auction_startDate = TZ.localize(auction_startDate)
+            enquiry_endDate = parse_date(auction['enquiryPeriod']['endDate'], None)
+            if not enquiry_endDate.tzinfo:
+                enquiry_endDate = TZ.localize(enquiry_endDate)
+            self.assertLessEqual((auction_startDate - enquiry_endDate).total_seconds(), 300.006945)
+        else:
+            self.assertEqual(parse_date(auction['enquiryPeriod']['endDate']).date(), parse_date(data['auctionPeriod']['startDate'], TZ).date() - timedelta(days=6))
+            self.assertEqual(parse_date(auction['enquiryPeriod']['endDate']).time(), time(23, 59, 50))
 
     def test_create_auction_generated(self):
         data = self.initial_data.copy()

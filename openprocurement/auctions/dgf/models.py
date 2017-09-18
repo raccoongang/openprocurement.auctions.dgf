@@ -290,13 +290,17 @@ class Auction(BaseAuction):
         self.tenderPeriod.endDate = calculate_business_date(self.auctionPeriod.startDate, -pause_between_periods, self)
         # calculate equ period same as abouve
         if self.enquiryPeriod.endDate:
+            if self.enquiryPeriod.endDate > self.auctionPeriod.startDate - timedelta(days=MINIMAL_PERIOD_FROM_EQUIRY_END):
+                self.enquiryPeriod.endDate = calculate_business_date(self.auctionPeriod.startDate, -pause_between_enquiry_and_tender_periods, self)
+
             enquiry_end_timedelta = timedelta(days=(self.auctionPeriod.startDate - self.enquiryPeriod.endDate).days)
             self.enquiryPeriod.endDate = calculate_business_date(self.auctionPeriod.startDate, -enquiry_end_timedelta, self)
-        elif not self.enquiryPeriod.endDate:
+
+        else:
             self.enquiryPeriod.endDate = calculate_business_date(self.auctionPeriod.startDate, -pause_between_enquiry_and_tender_periods, self)
             # self.enquiryPeriod.endDate = calculate_business_date(self.enquiryPeriod.startDate, period_from_start_to_enq_end, self)
             # self.enquiryPeriod.endDate = calculate_business_date(now, period_from_start_to_enq_end, self)
-        # TODO cleanup 
+
         self.auctionPeriod.startDate = None
         self.auctionPeriod.endDate = None
         self.date = now
