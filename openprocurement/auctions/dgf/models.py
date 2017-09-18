@@ -25,7 +25,7 @@ from openprocurement.auctions.flash.models import (
     ProcuringEntity as BaseProcuringEntity, Question as BaseQuestion,
     get_auction, Administrator_role
 )
-from openprocurement.auctions.dgf.constants import (MINIMAL_EXPOSITION_PERIOD, MINIMAL_EXPOSITION_REQUIRED_FROM)
+from openprocurement.auctions.dgf.constants import (MINIMAL_EXPOSITION_PERIOD, MINIMAL_EXPOSITION_REQUIRED_FROM, MINIMAL_PERIOD_FROM_EQUIRY_END)
 
 
 def read_json(name):
@@ -244,7 +244,7 @@ class AuctionAuctionPeriod(Period):
             raise ValidationError(u'This field is required.')
 
 
-create_role = (blacklist('owner_token', 'owner', '_attachments', 'revisions', 'date', 'dateModified', 'doc_id', 'auctionID', 'bids', 'documents', 'awards', 'questions', 'complaints', 'auctionUrl', 'status', 'enquiryPeriod', 'tenderPeriod', 'awardPeriod', 'procurementMethod', 'eligibilityCriteria', 'eligibilityCriteria_en', 'eligibilityCriteria_ru', 'awardCriteria', 'submissionMethod', 'cancellations', 'numberOfBidders', 'contracts') + schematics_embedded_role)
+create_role = (blacklist('owner_token', 'owner', '_attachments', 'revisions', 'date', 'dateModified', 'doc_id', 'auctionID', 'bids', 'documents', 'awards', 'questions', 'complaints', 'auctionUrl', 'status', 'tenderPeriod', 'awardPeriod', 'procurementMethod', 'eligibilityCriteria', 'eligibilityCriteria_en', 'eligibilityCriteria_ru', 'awardCriteria', 'submissionMethod', 'cancellations', 'numberOfBidders', 'contracts') + schematics_embedded_role)
 
 
 @implementer(IAuction)
@@ -285,7 +285,18 @@ class Auction(BaseAuction):
         now = get_now()
         self.tenderPeriod.startDate = self.enquiryPeriod.startDate = now
         pause_between_periods = self.auctionPeriod.startDate - (self.auctionPeriod.startDate.replace(hour=20, minute=0, second=0, microsecond=0) - timedelta(days=1))
-        self.enquiryPeriod.endDate = self.tenderPeriod.endDate = calculate_business_date(self.auctionPeriod.startDate, -pause_between_periods, self)
+        pause_between_enquiry_and_tender_periods = self.auctionPeriod.startDate - (self.auctionPeriod.startDate.replace(hour=23, minute=59, second=50, microsecond=0) - timedelta(days=MINIMAL_PERIOD_FROM_EQUIRY_END+1))
+        # period_from_start_to_enq_end = (self.auctionPeriod.startDate - self.enquiryPeriod.startDate) - timedelta(days=MINIMAL_PERIOD_FROM_EQUIRY_END)
+        self.tenderPeriod.endDate = calculate_business_date(self.auctionPeriod.startDate, -pause_between_periods, self)
+        # calculate equ period same as abouve
+        if self.enquiryPeriod.endDate:
+            enquiry_end_timedelta = timedelta(days=(self.auctionPeriod.startDate - self.enquiryPeriod.endDate).days)
+            self.enquiryPeriod.endDate = calculate_business_date(self.auctionPeriod.startDate, -enquiry_end_timedelta, self)
+        elif not self.enquiryPeriod.endDate:
+            self.enquiryPeriod.endDate = calculate_business_date(self.auctionPeriod.startDate, -pause_between_enquiry_and_tender_periods, self)
+            # self.enquiryPeriod.endDate = calculate_business_date(self.enquiryPeriod.startDate, period_from_start_to_enq_end, self)
+            # self.enquiryPeriod.endDate = calculate_business_date(now, period_from_start_to_enq_end, self)
+
         self.auctionPeriod.startDate = None
         self.auctionPeriod.endDate = None
         self.date = now

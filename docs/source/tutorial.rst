@@ -58,6 +58,18 @@ will be returned:
 .. include:: tutorial/tenderperiod-validation-error.http
    :code:
 
+Organizer can provide custom *enquiryPeriod.endDate*. From *enquiryPeriod.endDate* 
+till *tenderPeriod.endDate* should be not less than `X` days. Now `X = 5`.
+
+If Organizer provides incorrect *enquiryPeriod.endDate*, no error will be returned
+but this date will be set to *tenderPeriod.endDate* minus 5 days.
+
+Let's set *enquiryPeriod.endDate* few days after *auctionPeriod.startDate*.
+Validator will correct it's value:
+
+.. include:: tutorial/enquiryperiod-validation.http
+   :code:
+
 Let's access the URL of the created object (the `Location` header of the response):
 
 .. include:: tutorial/blank-auction-view.http
