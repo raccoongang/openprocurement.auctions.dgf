@@ -8,8 +8,9 @@ from openprocurement.api.utils import (
 )
 from openprocurement.auctions.core.utils import (
     cleanup_bids_for_cancelled_lots, check_complaint_status,
-    check_auction_status, remove_draft_bids, add_next_award
+    check_auction_status, remove_draft_bids, add_next_award, save_auction
 )
+from openprocurement.api.utils import (apply_data_patch, context_unpack)
 
 PKG = get_distribution(__package__)
 LOGGER = getLogger(PKG.project_name)
@@ -102,3 +103,15 @@ def check_status(request):
             if standStillEnd <= now:
                 check_auction_status(request)
                 return
+
+
+def apply_patch_draft_bids(request, data=None, save=True, src=None):
+    data = request.validated['data'] if data is None else data
+    patch = data and apply_data_patch(src or request.context.serialize(), data)
+    auction = request.validated['auction']
+    if patch:
+        request.context.import_data(patch)
+        for bid in auction.bids:
+            setattr(bid, "status", "draft")
+        if save:
+            return save_auction(request)

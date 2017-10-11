@@ -48,14 +48,26 @@ created with `active.tendering` status.
 
 Keep in mind that `tenderPeriod` must be at least 7 calendar days.
 
-When `auctionPeriod.startDate` has an incorrect date, 422 Unprocessable Entity 
-error is raised and "tenderPeriod should be greater than 6 days" message is 
+When `auctionPeriod.startDate` has an incorrect date, 422 Unprocessable Entity
+error is raised and "tenderPeriod should be greater than 6 days" message is
 returned in JSON response.
 
 Let's set `auctionPeriod.startDate` to `now + timedelta(days=6)` and ValidationError
 will be returned:
 
 .. include:: tutorial/tenderperiod-validation-error.http
+   :code:
+
+Organizer can provide custom *enquiryPeriod.endDate*. From *enquiryPeriod.endDate*
+till *tenderPeriod.endDate* should be not less than `X` days. Now `X = 5`.
+
+If Organizer provides incorrect *enquiryPeriod.endDate*, no error will be returned
+but this date will be set to *tenderPeriod.endDate* minus 5 days.
+
+Let's set *enquiryPeriod.endDate* few days after *auctionPeriod.startDate*.
+Validator will correct it's value:
+
+.. include:: tutorial/enquiryperiod-validation.http
    :code:
 
 Let's access the URL of the created object (the `Location` header of the response):
@@ -90,6 +102,8 @@ And indeed we have 2 auctions now.
 
 Modifying auction
 -----------------
+
+Lot editing for organizer is allowed only before *enquiryPeriod.endDate*. After this date 403 error will be returned.
 
 Let's update auction by supplementing it with all other essential properties:
 

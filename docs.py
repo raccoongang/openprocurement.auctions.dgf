@@ -5,7 +5,7 @@ import os
 from datetime import timedelta, datetime
 from uuid import uuid4
 
-from openprocurement.api.models import get_now
+from openprocurement.api.models import get_now, SANDBOX_MODE
 import openprocurement.auctions.dgf.tests.base as base_test
 from openprocurement.auctions.flash.tests.base import PrefixedRequestClass
 from openprocurement.auctions.dgf.tests.base import test_auction_data as base_test_auction_data, test_bids, test_financial_bids
@@ -243,11 +243,12 @@ class AuctionResourceTest(BaseAuctionWebTest):
         return super(AuctionResourceTest, self).generate_docservice_url().replace('/localhost/', '/public.docs-sandbox.ea.openprocurement.org/')
 
     def test_docs_acceleration(self):
-        # SANDBOX_MODE=TRUE
+        # SANDBOX_MODE=True
         data = test_auction_data.copy()
-        data['procurementMethodDetails'] = 'quick, accelerator=1440'
-        data['submissionMethodDetails'] = 'quick'
-        data['mode'] = 'test'
+        if SANDBOX_MODE:
+            data['procurementMethodDetails'] = 'quick, accelerator=1440'
+            data['submissionMethodDetails'] = 'quick'
+            data['mode'] = 'test'
         data["auctionPeriod"] = {
             "startDate": (now + timedelta(days=12)).isoformat()
         }
@@ -317,12 +318,30 @@ class AuctionResourceTest(BaseAuctionWebTest):
         owner_token = response.json['access']['token']
 
         data = test_auction_data.copy()
-        data["auctionPeriod"] = {
-            "startDate": (now + timedelta(days=6)).isoformat()
-        }
+        if SANDBOX_MODE:
+            data["auctionPeriod"] = {
+                "startDate": (now + timedelta(minutes=1)).isoformat()
+            }
+        else:
+            data["auctionPeriod"] = {
+                "startDate": (now + timedelta(days=6)).isoformat()
+            }
         with open('docs/source/tutorial/tenderperiod-validation-error.http', 'w') as self.app.file_obj:
             response = self.app.post_json('/auctions?opt_pretty=1', {"data": data}, status=422)
             self.assertEqual(response.status, '422 Unprocessable Entity')
+
+        data = test_auction_data.copy()
+        if SANDBOX_MODE:
+            data["enquiryPeriod"] = {
+                "endDate": (now + timedelta(minutes=5)).isoformat()
+            }
+        else:
+            data["enquiryPeriod"] = {
+                "endDate": (now + timedelta(days=20)).isoformat()
+            }
+        with open('docs/source/tutorial/enquiryperiod-validation.http', 'w') as self.app.file_obj:
+            response = self.app.post_json('/auctions?opt_pretty=1', {"data": data}, status=201)
+            self.assertEqual(response.status, '201 Created')
 
         with open('docs/source/tutorial/blank-auction-view.http', 'w') as self.app.file_obj:
             response = self.app.get('/auctions/{}'.format(auction['id']))

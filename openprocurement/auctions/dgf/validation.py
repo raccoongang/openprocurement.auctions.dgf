@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from openprocurement.api.utils import error_handler
-
+from openprocurement.api.models import get_now, TZ
 
 def validate_change_price_criteria_reduction(request):
     """
@@ -25,3 +25,13 @@ def validate_change_price_criteria_reduction(request):
         if request.errors:
             request.errors.status = 403
             raise error_handler(request.errors)
+
+def validate_enquiry_period_editing(request):
+    if request.context.status == 'active.tendering' and request.authenticated_role != 'chronograph':
+        auction = request.validated['auction']
+        now = get_now()
+        if auction.enquiryPeriod.endDate.astimezone(TZ) < now:
+            request.errors.add('body', 'data', 'Lot editing allowed only before enquiryPeriod.endDate')
+            request.errors.status = 403
+            raise error_handler(request.errors)
+            

@@ -1,0 +1,168 @@
+POST /api/2.3/auctions?opt_pretty=1 HTTP/1.0
+Authorization: Basic YnJva2VyOg==
+Content-Length: 2081
+Content-Type: application/json
+Host: api-sandbox.ea.openprocurement.org
+
+{
+  "data": {
+    "title": "футляри до державних нагород", 
+    "minimalStep": {
+      "currency": "UAH", 
+      "amount": 35
+    }, 
+    "auctionPeriod": {
+      "startDate": "2017-10-09"
+    }, 
+    "tenderAttempts": 1, 
+    "procurementMethodType": "dgfOtherAssets", 
+    "value": {
+      "currency": "UAH", 
+      "amount": 100
+    }, 
+    "dgfID": "219560", 
+    "enquiryPeriod": {
+      "endDate": "2017-10-15T12:53:59.088832"
+    }, 
+    "items": [
+      {
+        "description": "Земля для військовослужбовців", 
+        "classification": {
+          "scheme": "CPV", 
+          "id": "66113000-5", 
+          "description": "Земельні ділянки"
+        }, 
+        "address": {
+          "countryName": "Україна", 
+          "postalCode": "79000", 
+          "region": "м. Київ", 
+          "streetAddress": "вул. Банкова 1", 
+          "locality": "м. Київ"
+        }, 
+        "contractPeriod": {
+          "startDate": "2017-09-27T12:53:59.086517", 
+          "endDate": "2017-09-30T12:53:59.086517"
+        }, 
+        "unit": {
+          "code": "44617100-9", 
+          "name": "item"
+        }, 
+        "quantity": 5.001
+      }
+    ], 
+    "procuringEntity": {
+      "contactPoint": {
+        "name": "Державне управління справами", 
+        "telephone": "0440000000"
+      }, 
+      "identifier": {
+        "scheme": "UA-EDR", 
+        "id": "00037256", 
+        "uri": "http://www.dus.gov.ua/"
+      }, 
+      "name": "Державне управління справами", 
+      "address": {
+        "countryName": "Україна", 
+        "postalCode": "01220", 
+        "region": "м. Київ", 
+        "streetAddress": "вул. Банкова, 11, корпус 1", 
+        "locality": "м. Київ"
+      }
+    }
+  }
+}
+
+
+201 Created
+Content-Type: application/json; charset=UTF-8
+Location: http://api-sandbox.ea.openprocurement.org/api/2.3/auctions/0e3731db295940f0a9f6b3a7e018025b
+
+{
+  "access": {
+    "token": "28660bcfb7a94d269840ad1a4fe44709"
+  }, 
+  "data": {
+    "procurementMethod": "open", 
+    "auctionID": "UA-PS-2017-09-25-000003", 
+    "tenderPeriod": {
+      "startDate": "2017-09-25T12:54:04.867973+03:00", 
+      "endDate": "2017-10-08T20:00:00+03:00"
+    }, 
+    "title": "футляри до державних нагород", 
+    "minimalStep": {
+      "currency": "UAH", 
+      "amount": 35.0, 
+      "valueAddedTaxIncluded": true
+    }, 
+    "enquiryPeriod": {
+      "startDate": "2017-09-25T12:54:04.867973+03:00", 
+      "endDate": "2017-10-04T00:00:00+03:00"
+    }, 
+    "tenderAttempts": 1, 
+    "procurementMethodType": "dgfOtherAssets", 
+    "value": {
+      "currency": "UAH", 
+      "amount": 100.0, 
+      "valueAddedTaxIncluded": true
+    }, 
+    "submissionMethod": "electronicAuction", 
+    "date": "2017-09-25T12:54:04.867973+03:00", 
+    "dateModified": "2017-09-25T12:54:04.869789+03:00", 
+    "status": "active.tendering", 
+    "procuringEntity": {
+      "contactPoint": {
+        "name": "Державне управління справами", 
+        "telephone": "0440000000"
+      }, 
+      "identifier": {
+        "scheme": "UA-EDR", 
+        "id": "00037256", 
+        "uri": "http://www.dus.gov.ua/"
+      }, 
+      "name": "Державне управління справами", 
+      "address": {
+        "postalCode": "01220", 
+        "countryName": "Україна", 
+        "streetAddress": "вул. Банкова, 11, корпус 1", 
+        "region": "м. Київ", 
+        "locality": "м. Київ"
+      }
+    }, 
+    "dgfID": "219560", 
+    "auctionPeriod": {
+      "shouldStartAfter": "2017-10-09T00:00:00+03:00"
+    }, 
+    "owner": "broker", 
+    "next_check": "2017-10-08T20:00:00+03:00", 
+    "items": [
+      {
+        "description": "Земля для військовослужбовців", 
+        "classification": {
+          "scheme": "CPV", 
+          "description": "Земельні ділянки", 
+          "id": "66113000-5"
+        }, 
+        "address": {
+          "postalCode": "79000", 
+          "countryName": "Україна", 
+          "streetAddress": "вул. Банкова 1", 
+          "region": "м. Київ", 
+          "locality": "м. Київ"
+        }, 
+        "quantity": 5.001, 
+        "id": "10317f392b4941ea84d22afb9fab2e59", 
+        "unit": {
+          "code": "44617100-9", 
+          "name": "item"
+        }, 
+        "contractPeriod": {
+          "startDate": "2017-09-27T12:53:59.086517+03:00", 
+          "endDate": "2017-09-30T12:53:59.086517+03:00"
+        }
+      }
+    ], 
+    "id": "0e3731db295940f0a9f6b3a7e018025b", 
+    "awardCriteria": "highestCost"
+  }
+}
+

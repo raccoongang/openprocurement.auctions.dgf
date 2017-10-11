@@ -4,9 +4,9 @@ Overview
 openprocurement.auctions.dgf contains documentaion for Deposit Guarantee Fund auctions.
 
 There are two procedures:
- 
+
  * dgfOtherAssets - sale of the insolvent bank property.
- 
+
  * dgfFinancialAssets - sale of the creditor claim right.
 
 
@@ -15,6 +15,9 @@ Features
 
 * No need to specify enquiries period (there is no *active.enquiries* status), since it overlaps with *active.tendering* period.
 * `tenderPeriod` must be at least 7 calendar days.
+* Organizer can provide custom *enquiryPeriod.endDate*.
+* From *enquiryPeriod.endDate* till *tenderPeriod.endDate* should be not less than `X` days. Now `X = 5`.
+* Lot editing for organizer is allowed only before *enquiryPeriod.endDate*. After this date 403 error will be returned.
 * Procedure can be switched from *draft* status to *active.tendering*.
 * During *active.tendering* period participants can ask questions, submit proposals, and upload documents.
 * The only date Organizer has to provide is *Tender.auctionPeriod.startDate*, the rest will be calculated automatically.
@@ -32,7 +35,7 @@ errors.  Only the UTF-8 character encoding is supported for both requests
 and responses.
 
 All API POST and PUT requests expect a top-level object with a single
-element in it named `data`.  Successful responses will mirror this format. 
+element in it named `data`.  Successful responses will mirror this format.
 The data element should itself be an object, containing the parameters for
 the request.  In the case of creating a new auction, these are the fields we
 want to set on the auction itself.
@@ -62,7 +65,7 @@ The source repository for this project is on GitHub: https://github.com/openproc
 
 You can leave feedback by raising a new issue on the `issue tracker
 <https://github.com/openprocurement/openprocurement.auctions.dgf/issues>`_ (GitHub
-registration necessary).  
+registration necessary).
 
 Documentation of related packages
 ---------------------------------
