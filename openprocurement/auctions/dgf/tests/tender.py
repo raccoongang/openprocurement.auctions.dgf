@@ -44,7 +44,7 @@ class AuctionTest(BaseWebTest):
             'procurementMethodRationale', 'procurementMethodRationale_en', 'procurementMethodRationale_ru',
             'procurementMethodType', 'procuringEntity', 'minNumberOfQualifiedBids',
             'submissionMethodDetails', 'submissionMethodDetails_en', 'submissionMethodDetails_ru',
-            'title', 'title_en', 'title_ru', 'value', 'auctionPeriod',
+            'title', 'title_en', 'title_ru', 'value', 'auctionPeriod', 'enquiryPeriod'
         ])
         if SANDBOX_MODE:
             fields.add('procurementMethodDetails')
@@ -551,9 +551,8 @@ class AuctionResourceTest(BaseWebTest):
         self.assertEqual(response.status, '422 Unprocessable Entity')
         self.assertEqual(response.content_type, 'application/json')
         self.assertEqual(response.json['status'], 'error')
-        self.assertEqual(response.json['errors'], [
-            {u'description': [u'tenderPeriod should be greater than 6 days'], u'location': u'body', u'name': u'tenderPeriod'}
-        ])
+        self.assertEqual(response.json['errors'], [{u'description': [u'enquiryPeriod.endDate should be before tenderPeriod.endDate'], u'location': u'body', u'name': u'enquiryPeriod'}, 
+            {u'description': [u'tenderPeriod should be greater than 6 days'], u'location': u'body', u'name': u'tenderPeriod'}])
 
         data = self.initial_data['minimalStep']
         self.initial_data['minimalStep'] = {'amount': '1000.0'}
@@ -654,6 +653,26 @@ class AuctionResourceTest(BaseWebTest):
         else:
             self.assertEqual(parse_date(auction['tenderPeriod']['endDate']).date(), parse_date(data['auctionPeriod']['startDate'], TZ).date() - timedelta(days=1))
             self.assertEqual(parse_date(auction['tenderPeriod']['endDate']).time(), time(20, 0))
+
+    def test_create_auction_during_enquiryPeriod(self):
+        response = self.app.post_json('/auctions', {'data': self.initial_data})
+        self.assertEqual(response.status, '201 Created')
+        self.assertEqual(response.content_type, 'application/json')
+        auction = response.json['data']
+        self.assertIn('tenderPeriod', auction)
+        self.assertIn('auctionPeriod', auction)
+        self.assertNotIn('startDate', auction['auctionPeriod'])
+        self.assertEqual(parse_date(self.initial_data['auctionPeriod']['startDate']).date(), parse_date(auction['auctionPeriod']['shouldStartAfter'], TZ).date())
+        if SANDBOX_MODE:
+            auction_startDate = parse_date(self.initial_data['auctionPeriod']['startDate'], None)
+            if not auction_startDate.tzinfo:
+                auction_startDate = TZ.localize(auction_startDate)
+            enquiry_endDate = parse_date(auction['enquiryPeriod']['endDate'], None)
+            if not enquiry_endDate.tzinfo:
+                enquiry_endDate = TZ.localize(enquiry_endDate)
+            self.assertLessEqual((auction_startDate - enquiry_endDate).total_seconds(), 360)
+        else:
+            self.assertEqual(parse_date(auction['enquiryPeriod']['endDate']).date(), parse_date(self.initial_data['auctionPeriod']['startDate'], TZ).date() - timedelta(days=6))
 
     def test_create_auction_generated(self):
         data = self.initial_data.copy()
@@ -1423,6 +1442,38 @@ class AuctionResourceTest(BaseWebTest):
         response = self.app.patch_json('/auctions/{}'.format(auction['id']),{'data': {'value': {'amount': auction['value']['amount'] - 80}}}, status=422)
         self.assertEqual(response.json['errors'], [{'location': 'body', 'name': 'minimalStep', 'description': [u'value should be less than value of auction']}])
 
+
+class AuctionFieldsEditingTest(BaseAuctionWebTest):
+    initial_data = test_auction_data
+    initial_organization = test_organization
+
+    def test_patch_auction_denied(self):
+
+        # patch auction during enquiryPeriod
+
+        response = self.app.patch_json('/auctions/{}'.format(self.auction_id), {'data': {'value': {'amount': 80}}}, status=200)
+        self.assertEqual(response.status, '200 OK')
+        self.assertEqual(response.content_type, 'application/json')
+        self.assertEqual(response.json['data']['value']['amount'], 80)
+        response = self.app.patch_json('/auctions/{}'.format(self.auction_id), {'data': {'minimalStep': {'amount': 20}}}, status=200)
+        self.assertEqual(response.status, '200 OK')
+        self.assertEqual(response.content_type, 'application/json')
+        self.assertEqual(response.json['data']['minimalStep']['amount'], 20)
+
+        self.go_to_enquiryPeriod_end()
+
+        # patch auction after the enquiryPeriod.endDate
+
+        response = self.app.patch_json('/auctions/{}'.format(self.auction_id), {'data': {'value': {'amount': 80}}}, status=403)
+        self.assertEqual(response.status, '403 Forbidden')
+        self.assertEqual(response.content_type, 'application/json')
+        self.assertIn(u'Auction can be edited only during the enquiry period', response.json['errors'][0][u'description'])
+        response = self.app.patch_json('/auctions/{}'.format(self.auction_id), {'data': {'minimalStep': {'amount': 20}}}, status=403)
+        self.assertEqual(response.status, '403 Forbidden')
+        self.assertEqual(response.content_type, 'application/json')
+        self.assertIn(u'Auction can be edited only during the enquiry period', response.json['errors'][0][u'description'])
+
+
 class AuctionProcessTest(BaseAuctionWebTest):
     #setUp = BaseWebTest.setUp
     def setUp(self):
@@ -1719,6 +1770,11 @@ class FinancialAuctionTest(AuctionTest):
     auction = DGFFinancialAssets
 
 
+class FinancialAuctionFieldsEditingTest(AuctionFieldsEditingTest):
+    initial_data = test_financial_auction_data
+    initial_organization = test_financial_organization
+
+
 class FinancialAuctionResourceTest(AuctionResourceTest):
     initial_data = test_financial_auction_data
     initial_organization = test_financial_organization
@@ -1757,9 +1813,11 @@ def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(AuctionProcessTest))
     suite.addTest(unittest.makeSuite(AuctionResourceTest))
+    suite.addTest(unittest.makeSuite(AuctionFieldsEditingTest))
     suite.addTest(unittest.makeSuite(AuctionTest))
     suite.addTest(unittest.makeSuite(FinancialAuctionProcessTest))
     suite.addTest(unittest.makeSuite(FinancialAuctionResourceTest))
+    suite.addTest(unittest.makeSuite(FinancialAuctionFieldsEditingTest))
     suite.addTest(unittest.makeSuite(FinancialAuctionTest))
     return suite
 
