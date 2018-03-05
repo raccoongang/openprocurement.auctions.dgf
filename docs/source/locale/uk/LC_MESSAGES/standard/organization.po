@@ -29,8 +29,8 @@ msgstr "Схема"
 
 #: ../../source/standard/organization.rst:15
 #: ../../source/standard/organization.rst:64
-msgid "string, multilingual"
-msgstr "рядок, багатомовний"
+msgid "string, multilingual, required"
+msgstr "рядок, багатомовний, обов’язково"
 
 #: ../../source/standard/organization.rst:20
 msgid ":ref:`Identifier`"
@@ -98,8 +98,8 @@ msgstr ""
 "та ІПН)."
 
 #: ../../source/standard/organization.rst:66
-msgid "|ocdsDescription| The legally registered name of the organization."
-msgstr "|ocdsDescription| Легально зареєстрована назва організації."
+msgid "|ocdsDescription| The legally registered name of the organization. Should be identical to name."
+msgstr "|ocdsDescription| Легально зареєстрована назва організації. Повинно бути ідентичним з name."
 
 #: ../../source/standard/organization.rst:72
 msgid "uri"
@@ -192,8 +192,8 @@ msgstr ""
 "Повинне бути заповнене хоча б одне з полів: або `email`, або `telephone`."
 
 #: ../../source/standard/organization.rst:17
-msgid "Name of the organization."
-msgstr "Назва організації."
+msgid "Name of the organization. Should be identical to identifier.legalName."
+msgstr "Назва організації. Повинно бути ідентичним з identifier.legalName."
 
 #: ../../source/standard/organization.rst:22
 msgid "The primary identifier for this organization."

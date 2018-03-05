@@ -24,7 +24,8 @@ test_organization = {
     "identifier": {
         "scheme": u"UA-EDR",
         "id": u"00037256",
-        "uri": u"http://www.dus.gov.ua/"
+        "uri": u"http://www.dus.gov.ua/",
+        "legalName": u"Державне управління справами"
     },
     "address": {
         "countryName": u"Україна",
@@ -219,7 +220,8 @@ test_financial_auction_data["procurementMethodType"] = "dgfFinancialAssets"
 test_financial_organization = deepcopy(test_organization)
 test_financial_organization['additionalIdentifiers'] = [{
     "scheme": u"UA-FIN",
-    "id": u"А01 457213"
+    "id": u"А01 457213",
+    "legalName": u"Державне управління справами"
 }]
 
 test_financial_bids = []

@@ -95,9 +95,9 @@ class AuctionBidderResourceTest(BaseAuctionWebTest):
         self.assertIn({u"location": u"body", u"name": u"qualified", u"description": [u"This field is required."]}, response.json['errors'])
         if self.initial_organization == test_financial_organization:
             self.assertIn({u'description': [u'This field is required.'], u'location': u'body', u'name': u'eligible'}, response.json['errors'])
-            self.assertIn({u'description': [{u'additionalIdentifiers': [u'This field is required.'], u'contactPoint': [u'This field is required.'], u'identifier': {u'scheme': [u'This field is required.'], u'id': [u'This field is required.']}, u'name': [u'This field is required.'], u'address': [u'This field is required.']}], u'location': u'body', u'name': u'tenderers'}, response.json['errors'])
+            self.assertIn({u'description': [{u'additionalIdentifiers': [u'This field is required.'], u'contactPoint': [u'This field is required.'], u'identifier': {u'scheme': [u'This field is required.'], u'id': [u'This field is required.'], u'legalName': [u'This field is required.']}, u'name': [u'This field is required.'], u'address': [u'This field is required.']}], u'location': u'body', u'name': u'tenderers'}, response.json['errors'])
         else:
-            self.assertIn({u'description': [{u'contactPoint': [u'This field is required.'], u'identifier': {u'scheme': [u'This field is required.'], u'id': [u'This field is required.']}, u'name': [u'This field is required.'], u'address': [u'This field is required.']}], u'location': u'body', u'name': u'tenderers'}, response.json['errors'])
+            self.assertIn({u'description': [{u'contactPoint': [u'This field is required.'], u'identifier': {u'scheme': [u'This field is required.'], u'id': [u'This field is required.'], u'legalName': [u'This field is required.']}, u'name': [u'This field is required.'], u'address': [u'This field is required.']}], u'location': u'body', u'name': u'tenderers'}, response.json['errors'])
 
         response = self.app.post_json(request_path, {'data': {'tenderers': [{
             'name': 'name', 'identifier': {'uri': 'invalid_value'}}]}}, status=422)
@@ -107,9 +107,44 @@ class AuctionBidderResourceTest(BaseAuctionWebTest):
         self.assertIn({u"location": u"body", u"name": u"qualified", u"description": [u"This field is required."]}, response.json['errors'])
         if self.initial_organization == test_financial_organization:
             self.assertIn({u'description': [u'This field is required.'], u'location': u'body', u'name': u'eligible'}, response.json['errors'])
-            self.assertIn({u'description': [{u'additionalIdentifiers': [u'This field is required.'], u'contactPoint': [u'This field is required.'], u'identifier': {u'scheme': [u'This field is required.'], u'id': [u'This field is required.'], u'uri': [u'Not a well formed URL.']}, u'address': [u'This field is required.']}], u'location': u'body', u'name': u'tenderers'}, response.json['errors'])
+            self.assertIn({u'description': [{u'additionalIdentifiers': [u'This field is required.'], u'contactPoint': [u'This field is required.'], u'identifier': {u'scheme': [u'This field is required.'], u'id': [u'This field is required.'], u'uri': [u'Not a well formed URL.'], u'legalName': [u'This field is required.']}, u'address': [u'This field is required.']}], u'location': u'body', u'name': u'tenderers'}, response.json['errors'])
         else:
-            self.assertIn({u'description': [{u'contactPoint': [u'This field is required.'], u'identifier': {u'scheme': [u'This field is required.'], u'id': [u'This field is required.'], u'uri': [u'Not a well formed URL.']}, u'address': [u'This field is required.']}], u'location': u'body', u'name': u'tenderers'}, response.json['errors'])
+            self.assertIn({u'description': [{u'contactPoint': [u'This field is required.'], u'identifier': {u'scheme': [u'This field is required.'], u"legalName": [u'This field is required.'], u'id': [u'This field is required.'], u'uri': [u'Not a well formed URL.']}, u'address': [u'This field is required.']}], u'location': u'body', u'name': u'tenderers'}, response.json['errors'])
+
+        test_invalid_organization = deepcopy(self.initial_organization)
+        test_invalid_organization['identifier']['id'] = u"NON NUMERIC ID"
+        if self.initial_organization == test_financial_organization:
+            response = self.app.post_json('/auctions/{}/bids'.format(
+                self.auction_id), {'data': {'tenderers': [
+                test_invalid_organization], "value": {"amount": 500}, 'qualified': True, 'eligible': True}}, status=422)
+        else:
+            response = self.app.post_json('/auctions/{}/bids'.format(
+                self.auction_id),
+                {'data': {'tenderers': [test_invalid_organization], "value": {"amount": 500}, 'qualified': True}},
+                status=422)
+        self.assertEqual(response.status, '422 Unprocessable Entity')
+        self.assertEqual(response.content_type, 'application/json')
+        self.assertEqual(response.json['status'], 'error')
+        self.assertEqual(response.json['errors'][0]["description"][0]['identifier']['id'][0],
+                         u'id should contain only digits')
+
+        test_invalid_organization = deepcopy(self.initial_organization)
+        if test_invalid_organization == test_financial_organization:
+            test_invalid_organization['identifier']['legalName'] = u"WRONG NAME"
+            response = self.app.post_json('/auctions/{}/bids'.format(
+                self.auction_id), {'data': {'tenderers': [
+                test_invalid_organization], "value": {"amount": 500}, 'qualified': True, 'eligible': True}}, status=422)
+        else:
+            test_invalid_organization['identifier']['legalName'] = u"WRONG NAME"
+            response = self.app.post_json('/auctions/{}/bids'.format(
+                self.auction_id),
+                {'data': {'tenderers': [test_invalid_organization], "value": {"amount": 500}, 'qualified': True}},
+                status=422)
+        self.assertEqual(response.status, '422 Unprocessable Entity')
+        self.assertEqual(response.content_type, 'application/json')
+        self.assertEqual(response.json['status'], 'error')
+        self.assertEqual(response.json['errors'][0]["description"],
+                         u'tenderers.name and tenderers.identifier.legalName should be identical.')
 
         if self.initial_organization == test_financial_organization:
             response = self.app.post_json(request_path, {'data': {'tenderers': [self.initial_organization], 'qualified': True, 'eligible': True}}, status=422)
@@ -209,7 +244,29 @@ class AuctionBidderResourceTest(BaseAuctionWebTest):
             {u'description': [u'value of bid should be greater than value of auction'], u'location': u'body', u'name': u'value'}
         ])
 
-        response = self.app.patch_json('/auctions/{}/bids/{}'.format(self.auction_id, bidder['id']), {"data": {'tenderers': [{"name": u"Державне управління управлінням справами"}]}})
+        response = self.app.patch_json('/auctions/{}/bids/{}'.format(self.auction_id, bidder['id']), {"data":
+            {'tenderers':
+                [{
+                    "name": u"Державне управління управлінням справами",
+                    "identifier": {
+                        "scheme": u"UA-EDR",
+                        "id": u"00037256",
+                        "uri": u"http://www.dus.gov.ua/",
+                        "legalName": u"Державне управління управлінням справами"
+                    },
+                    "address": {
+                        "countryName": u"Україна",
+                        "postalCode": u"01220",
+                        "region": u"м. Київ",
+                        "locality": u"м. Київ",
+                        "streetAddress": u"вул. Банкова, 11, корпус 1"
+                    },
+                    "contactPoint": {
+                        "name": u"Державне управління справами",
+                        "telephone": u"0440000000"
+                    }
+                }
+        ]}})
         self.assertEqual(response.status, '200 OK')
         self.assertEqual(response.content_type, 'application/json')
         self.assertEqual(response.json['data']['date'], bidder['date'])

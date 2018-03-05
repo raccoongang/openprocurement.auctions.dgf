@@ -117,6 +117,16 @@ class Item(BaseItem):
 
 class Identifier(BaseIdentifier):
     scheme = StringType(required=True, choices=ORA_CODES)
+    legalName = StringType(required=True)  # The legally registered name of the organization.
+    id = BaseType(required=True)  # The identifier of the organization in the selected scheme.
+
+    def validate_id(self, data, value):
+        if isinstance(data['__parent__'], FinantialOrganization):
+            if data['__parent__']['identifier']['scheme'] == "UA-EDR" and not (data['__parent__']['identifier']['id']).isdigit():
+                raise ValidationError(u"id should contain only digits")
+        else:
+            if data.get('scheme') == "UA-EDR" and not value.isdigit():
+                raise ValidationError(u"id should contain only digits")
 
 
 class Organization(BaseOrganization):
