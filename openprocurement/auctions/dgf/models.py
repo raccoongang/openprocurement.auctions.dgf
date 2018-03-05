@@ -41,7 +41,9 @@ from .constants import (
     CPV_NON_SPECIFIC_LOCATION_UNITS,
     CAV_NON_SPECIFIC_LOCATION_UNITS,
     DGF_ADDRESS_REQUIRED_FROM,
-    MINIMAL_PERIOD_FROM_RECTIFICATION_END
+    MINIMAL_PERIOD_FROM_RECTIFICATION_END,
+    UA_EDR_ONLY_DIGITS_REQUIRED_FROM,
+    NAME_IDENTICAL_TO_LEGALNAME_REQUIRED_FROM
 )
 
 
@@ -117,6 +119,21 @@ class Item(BaseItem):
 
 class Identifier(BaseIdentifier):
     scheme = StringType(required=True, choices=ORA_CODES)
+    legalName = StringType(required=True)  # The legally registered name of the organization.
+    id = BaseType(required=True)  # The identifier of the organization in the selected scheme.
+
+    def validate_id(self, data, value):
+        if get_auction_creation_date(data) < UA_EDR_ONLY_DIGITS_REQUIRED_FROM:
+            return
+        if data.get('scheme') == "UA-EDR" and not value.isdigit():
+            raise ValidationError(u"id should contain only digits")
+
+    def validate_legalName(self, data, value):
+        if get_auction_creation_date(data) < NAME_IDENTICAL_TO_LEGALNAME_REQUIRED_FROM:
+            return True
+        if value != (data['__parent__']['name']):
+            raise ValidationError(u"tenderers.name and tenderers.identifier.legalName should be identical.")
+        return True
 
 
 class Organization(BaseOrganization):

@@ -12,9 +12,9 @@ Schema
 ------
 
 :name:
-    string, multilingual
+    string, multilingual, required
     
-    Name of the organization.
+    Name of the organization. Should be identical to identifier.legalName.
     
 :identifier:
     :ref:`Identifier`
@@ -61,10 +61,10 @@ Schema
    (EDRPOU and IPN).
 
 :legalName:
-   string, multilingual
+   string, multilingual, required
 
    |ocdsDescription|
-   The legally registered name of the organization.
+   The legally registered name of the organization. Should be identical to name.
    
    Full legal name (e.g. Nadra Bank).
 

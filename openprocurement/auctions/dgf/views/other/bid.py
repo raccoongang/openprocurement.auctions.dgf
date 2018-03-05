@@ -15,6 +15,7 @@ from openprocurement.auctions.core.validation import (
     validate_bid_data,
     validate_patch_bid_data,
 )
+from openprocurement.auctions.dgf.constants import NAME_IDENTICAL_TO_LEGALNAME_REQUIRED_FROM
 
 
 
@@ -251,7 +252,6 @@ class AuctionBidResource(APIResource):
             }
 
         """
-
         if self.request.authenticated_role != 'Administrator' and self.request.validated['auction_status'] != 'active.tendering':
             self.request.errors.add('body', 'data', 'Can\'t update bid in current ({}) auction status'.format(self.request.validated['auction_status']))
             self.request.errors.status = 403
