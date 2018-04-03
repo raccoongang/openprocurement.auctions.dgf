@@ -562,3 +562,16 @@ class Auction(DGFOtherAssets):
 
 
 DGFFinancialAssets = Auction
+
+# DGF propertyLease models
+
+
+@implementer(IAuction)
+class Auction(DGFOtherAssets):
+    """Data regarding auction process - publicly inviting prospective contractors to submit bids for evaluation and selecting a winner or winners."""
+    documents = ListType(ModelType(Document), default=list())  # All documents and attachments related to the auction.
+    bids = ListType(ModelType(Bid), default=list())
+    procurementMethodType = StringType(default="propertyLease")
+
+
+propertyLease = Auction
