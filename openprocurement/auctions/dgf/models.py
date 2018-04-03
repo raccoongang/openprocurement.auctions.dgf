@@ -330,7 +330,7 @@ class AuctionAuctionPeriod(Period):
         if self.startDate and get_now() > calc_auction_end_time(auction.numberOfBids, self.startDate):
             start_after = calc_auction_end_time(auction.numberOfBids, self.startDate)
         elif auction.tenderPeriod and auction.tenderPeriod.endDate:
-            start_after = auction.tenderPeriod.endDate
+            start_after = auction.tenderPeriod.endDate + timedelta(days=auction.deltaPeriod)
         else:
             return
         return rounding_shouldStartAfter(start_after, auction).isoformat()
@@ -380,6 +380,7 @@ class Auction(BaseAuction):
     lots = ListType(ModelType(Lot), default=list(), validators=[validate_lots_uniq, validate_not_available])
     items = ListType(ModelType(Item), required=True, min_size=1, validators=[validate_items_uniq])
     minNumberOfQualifiedBids = IntType(choices=[1, 2])
+    deltaPeriod = IntType(default=0)
 
     def __acl__(self):
         return [
@@ -572,7 +573,6 @@ class Auction(DGFOtherAssets):
     documents = ListType(ModelType(Document), default=list())  # All documents and attachments related to the auction.
     bids = ListType(ModelType(Bid), default=list())
     procurementMethodType = StringType(default="propertyLease")
-    deltaPeriod = IntType(default=0)
 
     def initialize(self):
         if not self.enquiryPeriod:
