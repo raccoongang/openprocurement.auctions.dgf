@@ -572,6 +572,26 @@ class Auction(DGFOtherAssets):
     documents = ListType(ModelType(Document), default=list())  # All documents and attachments related to the auction.
     bids = ListType(ModelType(Bid), default=list())
     procurementMethodType = StringType(default="propertyLease")
+    deltaPeriod = IntType(default=0)
+
+    def initialize(self):
+        if not self.enquiryPeriod:
+            self.enquiryPeriod = type(self).enquiryPeriod.model_class()
+        if not self.tenderPeriod:
+            self.tenderPeriod = type(self).tenderPeriod.model_class()
+        now = get_now()
+        self.tenderPeriod.startDate = self.enquiryPeriod.startDate = now
+        pause_between_periods = self.auctionPeriod.startDate - (self.auctionPeriod.startDate.replace(hour=20, minute=0, second=0, microsecond=0) - timedelta(days=1+self.deltaPeriod))
+        self.tenderPeriod.endDate = self.enquiryPeriod.endDate = calculate_business_date(self.auctionPeriod.startDate, -pause_between_periods, self)
+        if not self.rectificationPeriod:
+            self.rectificationPeriod = generate_rectificationPeriod(self)
+        self.rectificationPeriod.startDate = now
+        self.auctionPeriod.startDate = None
+        self.auctionPeriod.endDate = None
+        self.date = now
+        if self.lots:
+            for lot in self.lots:
+                lot.date = now
 
 
 propertyLease = Auction
