@@ -41,7 +41,8 @@ from .constants import (
     CPV_NON_SPECIFIC_LOCATION_UNITS,
     CAV_NON_SPECIFIC_LOCATION_UNITS,
     DGF_ADDRESS_REQUIRED_FROM,
-    MINIMAL_PERIOD_FROM_RECTIFICATION_END
+    MINIMAL_PERIOD_FROM_RECTIFICATION_END,
+    CPV_PROPERTY_CODES, CAVPS_PROPERTY_CODES
 )
 
 
@@ -94,6 +95,16 @@ class AdditionalClassification(Classification):
             raise ValidationError(BaseType.MESSAGES['choices'].format(unicode(CPVS_CODES)))
 
 
+class PropertyLeaseClassification(Classification):
+    scheme = StringType(required=True, default=u'CAV-PS')
+    id = StringType(required=True)
+
+    def validate_id(self, data, code):
+        auction = get_auction(data['__parent__'])
+        if data.get('scheme') == u'CAV-PS' and code not in CAVPS_PROPERTY_CODES:
+            raise ValidationError(BaseType.MESSAGES['choices'].format(unicode(CAVPS_PROPERTY_CODES)))
+
+
 class Item(BaseItem):
     """A good, service, or work to be contracted."""
     class Options:
@@ -113,6 +124,12 @@ class Item(BaseItem):
                 non_specific_location_cpv = data['classification']['scheme'] == u'CPV' and not data['classification']['id'].startswith(CPV_NON_SPECIFIC_LOCATION_UNITS)
                 if non_specific_location_cav or non_specific_location_cpv:
                     raise ValidationError(u'This field is required.')
+
+
+class PropertyItem(BaseItem):
+    """A good, service, or work to be contracted."""
+    classification = ModelType(CPVCAVClassification, required=False)
+    propertyLeaseClassification = ModelType(PropertyLeaseClassification, required=True)
 
 
 class Identifier(BaseIdentifier):
@@ -330,7 +347,7 @@ class AuctionAuctionPeriod(Period):
         if self.startDate and get_now() > calc_auction_end_time(auction.numberOfBids, self.startDate):
             start_after = calc_auction_end_time(auction.numberOfBids, self.startDate)
         elif auction.tenderPeriod and auction.tenderPeriod.endDate:
-            start_after = auction.tenderPeriod.endDate + timedelta(days=auction.deltaPeriod)
+            start_after = auction.tenderPeriod.endDate + timedelta(days=auction.pauseBeforeAuctionPeriod)
         else:
             return
         return rounding_shouldStartAfter(start_after, auction).isoformat()
@@ -380,7 +397,7 @@ class Auction(BaseAuction):
     lots = ListType(ModelType(Lot), default=list(), validators=[validate_lots_uniq, validate_not_available])
     items = ListType(ModelType(Item), required=True, min_size=1, validators=[validate_items_uniq])
     minNumberOfQualifiedBids = IntType(choices=[1, 2])
-    deltaPeriod = IntType(default=0)
+    pauseBeforeAuctionPeriod = IntType(default=0)
 
     def __acl__(self):
         return [
@@ -573,6 +590,7 @@ class Auction(DGFOtherAssets):
     documents = ListType(ModelType(Document), default=list())  # All documents and attachments related to the auction.
     bids = ListType(ModelType(Bid), default=list())
     procurementMethodType = StringType(default="propertyLease")
+    items = ListType(ModelType(PropertyItem), required=True, min_size=1, validators=[validate_items_uniq])
 
     def initialize(self):
         if not self.enquiryPeriod:
@@ -581,7 +599,7 @@ class Auction(DGFOtherAssets):
             self.tenderPeriod = type(self).tenderPeriod.model_class()
         now = get_now()
         self.tenderPeriod.startDate = self.enquiryPeriod.startDate = now
-        pause_between_periods = self.auctionPeriod.startDate - (self.auctionPeriod.startDate.replace(hour=20, minute=0, second=0, microsecond=0) - timedelta(days=1+self.deltaPeriod))
+        pause_between_periods = self.auctionPeriod.startDate - (self.auctionPeriod.startDate.replace(hour=20, minute=0, second=0, microsecond=0) - timedelta(days=1+self.pauseBeforeAuctionPeriod))
         self.tenderPeriod.endDate = self.enquiryPeriod.endDate = calculate_business_date(self.auctionPeriod.startDate, -pause_between_periods, self)
         if not self.rectificationPeriod:
             self.rectificationPeriod = generate_rectificationPeriod(self)
