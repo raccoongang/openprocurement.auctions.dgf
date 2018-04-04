@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import re
 from datetime import datetime, timedelta, time
 from schematics.types import StringType, URLType, IntType, BaseType
 from schematics.types.compound import ModelType
@@ -588,8 +589,10 @@ class LeaseTerms(Model):
 
     leaseDuration = StringType(required=True)
 
-    def validate_leaseDuration(values, *args):
-        pass
+    def validate_leaseDuration(self, data, value):
+        pattern = re.compile("^P(?=\d+[YMWD])(\d+Y)?(\d+M)?(\d+W)?(\d+D)?(T(?=\d+[HMS])(\d+H)?(\d+M)?(\d+S)?)?$")
+        if not pattern.match(value):
+            raise ValidationError(u"leaseDuration should be in ISO 8601 format.")
 
 
 class ContractTerms(Model):
