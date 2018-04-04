@@ -584,9 +584,18 @@ DGFFinancialAssets = Auction
 
 # DGF propertyLease models
 
+class LeaseTerms(Model):
+
+    leaseDuration = StringType(required=True)
+
+    def validate_leaseDuration(values, *args):
+        pass
+
+
 class ContractTerms(Model):
 
     contractType = StringType(required=True, choices=['lease'])
+    leaseTerms = ModelType(LeaseTerms, required=True)
 
 
 @implementer(IAuction)
