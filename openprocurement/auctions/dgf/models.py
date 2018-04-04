@@ -14,7 +14,8 @@ from openprocurement.api.models import (
     BooleanType, ListType, Feature, Period, get_now, TZ,
     validate_features_uniq, validate_lots_uniq, Identifier as BaseIdentifier,
     Classification, validate_items_uniq, ORA_CODES, Address, Location,
-    schematics_embedded_role, SANDBOX_MODE, CPV_CODES, IsoDateTimeType
+    schematics_embedded_role, SANDBOX_MODE, CPV_CODES, IsoDateTimeType,
+    Model
 )
 from openprocurement.api.utils import calculate_business_date
 
@@ -583,6 +584,10 @@ DGFFinancialAssets = Auction
 
 # DGF propertyLease models
 
+class ContractTerms(Model):
+
+    contractType = StringType(required=True, choices=['lease'])
+
 
 @implementer(IAuction)
 class Auction(DGFOtherAssets):
@@ -591,6 +596,7 @@ class Auction(DGFOtherAssets):
     bids = ListType(ModelType(Bid), default=list())
     procurementMethodType = StringType(default="propertyLease")
     items = ListType(ModelType(PropertyItem), required=True, min_size=1, validators=[validate_items_uniq])
+    contractTerms = ModelType(ContractTerms, required=True)
 
     def initialize(self):
         if not self.enquiryPeriod:
