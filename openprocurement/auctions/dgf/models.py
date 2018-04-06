@@ -99,7 +99,6 @@ class AdditionalClassification(Classification):
 
 class PropertyLeaseClassification(Classification):
     scheme = StringType(required=True, default=u'CAV-PS')
-    id = StringType(required=True)
 
     def validate_id(self, data, code):
         auction = get_auction(data['__parent__'])
@@ -349,7 +348,7 @@ class AuctionAuctionPeriod(Period):
         if self.startDate and get_now() > calc_auction_end_time(auction.numberOfBids, self.startDate):
             start_after = calc_auction_end_time(auction.numberOfBids, self.startDate)
         elif auction.tenderPeriod and auction.tenderPeriod.endDate:
-            start_after = auction.tenderPeriod.endDate + timedelta(days=auction.pauseBeforeAuctionPeriod)
+            start_after = auction.tenderPeriod.endDate
         else:
             return
         return rounding_shouldStartAfter(start_after, auction).isoformat()
@@ -399,7 +398,6 @@ class Auction(BaseAuction):
     lots = ListType(ModelType(Lot), default=list(), validators=[validate_lots_uniq, validate_not_available])
     items = ListType(ModelType(Item), required=True, min_size=1, validators=[validate_items_uniq])
     minNumberOfQualifiedBids = IntType(choices=[1, 2])
-    pauseBeforeAuctionPeriod = IntType(default=0)
 
     def __acl__(self):
         return [
@@ -604,8 +602,6 @@ class ContractTerms(Model):
 @implementer(IAuction)
 class Auction(DGFOtherAssets):
     """Data regarding auction process - publicly inviting prospective contractors to submit bids for evaluation and selecting a winner or winners."""
-    documents = ListType(ModelType(Document), default=list())  # All documents and attachments related to the auction.
-    bids = ListType(ModelType(Bid), default=list())
     procurementMethodType = StringType(default="propertyLease")
     items = ListType(ModelType(PropertyItem), required=True, min_size=1, validators=[validate_items_uniq])
     contractTerms = ModelType(ContractTerms, required=True)
@@ -617,17 +613,29 @@ class Auction(DGFOtherAssets):
             self.tenderPeriod = type(self).tenderPeriod.model_class()
         now = get_now()
         self.tenderPeriod.startDate = self.enquiryPeriod.startDate = now
-        pause_between_periods = self.auctionPeriod.startDate - (self.auctionPeriod.startDate.replace(hour=20, minute=0, second=0, microsecond=0) - timedelta(days=1+self.pauseBeforeAuctionPeriod))
-        self.tenderPeriod.endDate = self.enquiryPeriod.endDate = calculate_business_date(self.auctionPeriod.startDate, -pause_between_periods, self)
+        pause_between_periods = self.auctionPeriod.startDate - (self.auctionPeriod.startDate.replace(hour=20, minute=0, second=0, microsecond=0) - timedelta(days=1))
+        if not self.tenderPeriod.endDate:
+            self.tenderPeriod.endDate = self.enquiryPeriod.endDate = calculate_business_date(self.auctionPeriod.startDate, -pause_between_periods, self)
+        else:
+            self.tenderPeriod.endDate = self.tenderPeriod.endDate.replace(hour=20, minute=0, second=0, microsecond=0)
         if not self.rectificationPeriod:
             self.rectificationPeriod = generate_rectificationPeriod(self)
         self.rectificationPeriod.startDate = now
-        self.auctionPeriod.startDate = None
+        # self.auctionPeriod.startDate = None
         self.auctionPeriod.endDate = None
         self.date = now
         if self.lots:
             for lot in self.lots:
                 lot.date = now
 
+    def validate_tenderPeriod(self, data, period):
+        if not (period and period.startDate and period.endDate):
+            return
+        if get_auction_creation_date(data) < MINIMAL_EXPOSITION_REQUIRED_FROM:
+            return
+        if calculate_business_date(period.startDate, MINIMAL_EXPOSITION_PERIOD, data) > period.endDate:
+            raise ValidationError(u"tenderPeriod should be greater than 6 days")
+        if calculate_business_date(period.endDate, timedelta(days=3), data) < data.get('auctionPeriod').startDate:
+            raise ValidationError(u"Pause between tenderPeriod and auctionStartDate should be 3 days")
 
 propertyLease = Auction
