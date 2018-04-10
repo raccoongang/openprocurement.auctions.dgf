@@ -44,7 +44,7 @@ from .constants import (
     CAV_NON_SPECIFIC_LOCATION_UNITS,
     DGF_ADDRESS_REQUIRED_FROM,
     MINIMAL_PERIOD_FROM_RECTIFICATION_END,
-    CPV_PROPERTY_CODES, CAVPS_PROPERTY_CODES
+    CPVS_PROPERTY_CODES, CAVPS_PROPERTY_CODES
 )
 
 
@@ -101,9 +101,19 @@ class PropertyLeaseClassification(Classification):
     scheme = StringType(required=True, default=u'CAV-PS')
 
     def validate_id(self, data, code):
-        auction = get_auction(data['__parent__'])
         if data.get('scheme') == u'CAV-PS' and code not in CAVPS_PROPERTY_CODES:
             raise ValidationError(BaseType.MESSAGES['choices'].format(unicode(CAVPS_PROPERTY_CODES)))
+
+
+class PropertyLeaseAdditionalClassification(Classification):
+    scheme = StringType(required=True, default=u'CPVS')
+    id = StringType(required=True, default=u'PA01-7')
+
+    def validate_id(self, data, code):
+        if data.get('scheme') != u'CPVS':
+            raise ValidationError('propertyLease additionalClassifications scheme should be CPVS')
+        if data.get('scheme') == u'CPVS' and code not in CPVS_PROPERTY_CODES:
+            raise ValidationError(BaseType.MESSAGES['choices'].format(unicode(CPVS_PROPERTY_CODES)))
 
 
 class Item(BaseItem):
@@ -131,6 +141,7 @@ class PropertyItem(BaseItem):
     """A good, service, or work to be contracted."""
     classification = ModelType(CPVCAVClassification, required=False)
     propertyLeaseClassification = ModelType(PropertyLeaseClassification, required=True)
+    additionalClassifications = ModelType(PropertyLeaseAdditionalClassification, required=True)
 
 
 class Identifier(BaseIdentifier):
@@ -636,7 +647,10 @@ class Auction(DGFOtherAssets):
             return
         if calculate_business_date(period.startDate, MINIMAL_EXPOSITION_PERIOD, data) > period.endDate:
             raise ValidationError(u"tenderPeriod should be greater than 6 days")
-        if calculate_business_date(period.endDate, timedelta(days=3), data) < data.get('auctionPeriod').startDate:
-            raise ValidationError(u"Pause between tenderPeriod and auctionStartDate should be 3 days")
+        auctionStartDate = data.get('auctionPeriod').startDate
+        delayed_auction_start_date = calculate_business_date(period.endDate, timedelta(days=4), data).replace(hour=0, minute=0, second=0, microsecond=0)
+        normal_auction_start_date = calculate_business_date(period.endDate, timedelta(days=1), data).replace(hour=0, minute=0, second=0, microsecond=0)
+        if (delayed_auction_start_date != auctionStartDate and normal_auction_start_date != auctionStartDate):
+            raise ValidationError(u"Pause between tenderPeriod.endDate and auctionPeriod.startDate should be either 3 working days or none")
 
 propertyLease = Auction

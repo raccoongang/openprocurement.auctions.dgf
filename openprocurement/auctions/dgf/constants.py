@@ -33,7 +33,7 @@ DGF_ADDRESS_REQUIRED_FROM = datetime(2020, 2, 8, tzinfo=TZ)
 CAVPS_CODES = read_json('cav_ps.json')
 CPVS_CODES = read_json('cpvs.json')
 CAVPS_PROPERTY_CODES = read_json('cav_ps_property.json')
-CPV_PROPERTY_CODES = read_json('cpvs_property.json')
+CPVS_PROPERTY_CODES = read_json('cpvs_property.json')
 
 ORA_CODES[0:0] = ["UA-IPN", "UA-FIN"]
 
