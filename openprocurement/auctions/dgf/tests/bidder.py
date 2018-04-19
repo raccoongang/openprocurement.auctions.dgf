@@ -143,8 +143,7 @@ class AuctionBidderResourceTest(BaseAuctionWebTest):
         self.assertEqual(response.status, '422 Unprocessable Entity')
         self.assertEqual(response.content_type, 'application/json')
         self.assertEqual(response.json['status'], 'error')
-        self.assertEqual(response.json['errors'][0]["description"],
-                         u'tenderers.name and tenderers.identifier.legalName should be identical.')
+        self.assertEqual(response.json['errors'][0]["description"][0]['identifier']['legalName'][0], u'tenderers.name and tenderers.identifier.legalName should be identical.')
 
         if self.initial_organization == test_financial_organization:
             response = self.app.post_json(request_path, {'data': {'tenderers': [self.initial_organization], 'qualified': True, 'eligible': True}}, status=422)
@@ -245,14 +244,18 @@ class AuctionBidderResourceTest(BaseAuctionWebTest):
         ])
 
         response = self.app.patch_json('/auctions/{}/bids/{}'.format(self.auction_id, bidder['id']), {"data":
-            {'tenderers':
+            {
+              "value": {
+                           "amount": 800
+                       },
+            'tenderers':
                 [{
-                    "name": u"Державне управління управлінням справами",
+                    "name": u"Державне управління справами",
                     "identifier": {
                         "scheme": u"UA-EDR",
                         "id": u"00037256",
                         "uri": u"http://www.dus.gov.ua/",
-                        "legalName": u"Державне управління управлінням справами"
+                        "legalName": u"Державне управління справами"
                     },
                     "address": {
                         "countryName": u"Україна",
@@ -262,20 +265,20 @@ class AuctionBidderResourceTest(BaseAuctionWebTest):
                         "streetAddress": u"вул. Банкова, 11, корпус 1"
                     },
                     "contactPoint": {
-                        "name": u"Державне управління справами",
+                        "name": u"Державне управління управлінням справами",
                         "telephone": u"0440000000"
                     }
                 }
         ]}})
         self.assertEqual(response.status, '200 OK')
         self.assertEqual(response.content_type, 'application/json')
-        self.assertEqual(response.json['data']['date'], bidder['date'])
-        self.assertNotEqual(response.json['data']['tenderers'][0]['name'], bidder['tenderers'][0]['name'])
+        # self.assertEqual(response.json['data']['date'], bidder['date'])
+        self.assertEqual(response.json['data']['tenderers'][0]['name'], bidder['tenderers'][0]['name'])
 
-        response = self.app.patch_json('/auctions/{}/bids/{}'.format(self.auction_id, bidder['id']), {"data": {"value": {"amount": 500}, 'tenderers': [self.initial_organization]}})
+        response = self.app.patch_json('/auctions/{}/bids/{}'.format(self.auction_id, bidder['id']), {"data": {"value": {"amount": 900}, 'tenderers': [self.initial_organization]}})
         self.assertEqual(response.status, '200 OK')
         self.assertEqual(response.content_type, 'application/json')
-        self.assertEqual(response.json['data']['date'], bidder['date'])
+        # self.assertEqual(response.json['data']['date'], bidder['date'])
         self.assertEqual(response.json['data']['tenderers'][0]['name'], bidder['tenderers'][0]['name'])
 
         response = self.app.patch_json('/auctions/{}/bids/{}'.format(self.auction_id, bidder['id']), {"data": {"value": {"amount": 400}}})
@@ -1342,6 +1345,7 @@ class FinancialAuctionBidderResourceTest(AuctionBidderResourceTest):
 
         organization = deepcopy(self.initial_organization)
         organization['additionalIdentifiers'][0]['scheme'] = u'UA-EDR'
+        organization['additionalIdentifiers'][0]['id'] = u'00037256'
         response = self.app.post_json('/auctions/{}/bids'.format(
             self.auction_id), {'data': {'tenderers': [organization], 'qualified': True, 'eligible': True, "value": {"amount": 500}}}, status=422)
         self.assertEqual(response.status, '422 Unprocessable Entity')

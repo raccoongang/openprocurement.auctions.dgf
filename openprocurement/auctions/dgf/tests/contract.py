@@ -207,7 +207,7 @@ class AuctionContractResourceTest(BaseAuctionWebTest):
         #     i['complaintPeriod']['endDate'] = i['complaintPeriod']['startDate']
         # self.db.save(auction)
 
-        response = self.app.patch_json('/auctions/{}/contracts/{}'.format(self.auction_id, contract['id']), {"data": {"contractID": "myselfID", "items": [{"description": "New Description"}], "suppliers": [{"name": "New Name"}]}})
+        response = self.app.patch_json('/auctions/{}/contracts/{}'.format(self.auction_id, contract['id']), {"data": {"contractID": "myselfID", "items": [{"description": "New Description"}], "suppliers": [{"name": "Державне управління справами"}]}})
 
         response = self.app.get('/auctions/{}/contracts/{}'.format(self.auction_id, contract['id']))
         self.assertEqual(response.json['data']['contractID'], contract['contractID'])
@@ -284,7 +284,7 @@ class AuctionContractResourceTest(BaseAuctionWebTest):
         self.assertEqual(response.status, '403 Forbidden')
         self.assertEqual(response.json['errors'][0]["description"], "Can't update contract in current (complete) auction status")
 
-        response = self.app.patch_json('/auctions/{}/contracts/{}'.format(self.auction_id, contract['id']), {"data": {"suppliers": [{"name": "New Name"}]}}, status=403)
+        response = self.app.patch_json('/auctions/{}/contracts/{}'.format(self.auction_id, contract['id']), {"data": {"suppliers": [{"name": "Державне управління справами"}]}}, status=403)
         self.assertEqual(response.status, '403 Forbidden')
         self.assertEqual(response.json['errors'][0]["description"], "Can't update contract in current (complete) auction status")
 

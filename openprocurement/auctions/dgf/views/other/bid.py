@@ -26,19 +26,6 @@ from openprocurement.auctions.dgf.constants import NAME_IDENTICAL_TO_LEGALNAME_R
             description="Auction bids")
 class AuctionBidResource(APIResource):
 
-    def validate_tenderers_legalName(self):
-        auction = self.request.validated['auction']
-        if (auction.get('revisions')[0].date if auction.get(
-                'revisions') else get_now()) < NAME_IDENTICAL_TO_LEGALNAME_REQUIRED_FROM:
-            return True
-        bid = self.request.validated['bid']
-        for tenderer in bid.tenderers:
-            if tenderer.name != tenderer.identifier.legalName:
-                self.request.errors.add('body', 'data',
-                                   'tenderers.name and tenderers.identifier.legalName should be identical.')
-                self.request.errors.status = 422
-        return True
-
     @json_view(content_type="application/json", permission='create_bid', validators=(validate_bid_data,))
     def collection_post(self):
         """Registration of new bid proposal
@@ -122,8 +109,6 @@ class AuctionBidResource(APIResource):
         # See https://github.com/open-contracting/standard/issues/78#issuecomment-59830415
         # for more info upon schema
         auction = self.request.validated['auction']
-        if not self.validate_tenderers_legalName():
-            return
         if self.request.validated['auction_status'] != 'active.tendering':
             self.request.errors.add('body', 'data', 'Can\'t add bid in current ({}) auction status'.format(self.request.validated['auction_status']))
             self.request.errors.status = 403
@@ -267,8 +252,6 @@ class AuctionBidResource(APIResource):
             }
 
         """
-        if not self.validate_tenderers_legalName():
-            return
         if self.request.authenticated_role != 'Administrator' and self.request.validated['auction_status'] != 'active.tendering':
             self.request.errors.add('body', 'data', 'Can\'t update bid in current ({}) auction status'.format(self.request.validated['auction_status']))
             self.request.errors.status = 403
