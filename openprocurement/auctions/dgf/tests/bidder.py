@@ -243,42 +243,16 @@ class AuctionBidderResourceTest(BaseAuctionWebTest):
             {u'description': [u'value of bid should be greater than value of auction'], u'location': u'body', u'name': u'value'}
         ])
 
-        response = self.app.patch_json('/auctions/{}/bids/{}'.format(self.auction_id, bidder['id']), {"data":
-            {
-              "value": {
-                           "amount": 800
-                       },
-            'tenderers':
-                [{
-                    "name": u"Державне управління справами",
-                    "identifier": {
-                        "scheme": u"UA-EDR",
-                        "id": u"00037256",
-                        "uri": u"http://www.dus.gov.ua/",
-                        "legalName": u"Державне управління справами"
-                    },
-                    "address": {
-                        "countryName": u"Україна",
-                        "postalCode": u"01220",
-                        "region": u"м. Київ",
-                        "locality": u"м. Київ",
-                        "streetAddress": u"вул. Банкова, 11, корпус 1"
-                    },
-                    "contactPoint": {
-                        "name": u"Державне управління управлінням справами",
-                        "telephone": u"0440000000"
-                    }
-                }
-        ]}})
+        response = self.app.patch_json('/auctions/{}/bids/{}'.format(self.auction_id, bidder['id']), {"data": {'tenderers': [{"contactPoint": {"telephone": u"0570000000"}}]}})
         self.assertEqual(response.status, '200 OK')
         self.assertEqual(response.content_type, 'application/json')
-        # self.assertEqual(response.json['data']['date'], bidder['date'])
+        self.assertEqual(response.json['data']['date'], bidder['date'])
         self.assertEqual(response.json['data']['tenderers'][0]['name'], bidder['tenderers'][0]['name'])
 
-        response = self.app.patch_json('/auctions/{}/bids/{}'.format(self.auction_id, bidder['id']), {"data": {"value": {"amount": 900}, 'tenderers': [self.initial_organization]}})
+        response = self.app.patch_json('/auctions/{}/bids/{}'.format(self.auction_id, bidder['id']), {"data": {"value": {"amount": 500}, 'tenderers': [self.initial_organization]}})
         self.assertEqual(response.status, '200 OK')
         self.assertEqual(response.content_type, 'application/json')
-        # self.assertEqual(response.json['data']['date'], bidder['date'])
+        self.assertEqual(response.json['data']['date'], bidder['date'])
         self.assertEqual(response.json['data']['tenderers'][0]['name'], bidder['tenderers'][0]['name'])
 
         response = self.app.patch_json('/auctions/{}/bids/{}'.format(self.auction_id, bidder['id']), {"data": {"value": {"amount": 400}}})
